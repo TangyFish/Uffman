@@ -26,16 +26,42 @@ public class Huffman {
 		
 	}
 	
+	
 	public void run() throws Exception{
-		//creates a list of all the characters and puts them into nodes - we will construct the tree later;
-		ArrayList<HuffmanNode> nodes = new ArrayList<>();
+		//creates a priority queue of HuffmanNodes and then does stuff
+		PriorityQueue<HuffmanNode> q = new PriorityQueue<>();
 		for(char c : map.keySet()) {
 			HuffmanNode n = new HuffmanNode(c, map.get(c));
-			nodes.add(n);
+			q.add(n);
 		}
-		Collections.sort(nodes);
-		System.out.println(nodes);
 		
+		while(q.size() != 1) {
+			HuffmanNode left = q.poll();
+			HuffmanNode right = q.poll();
+			HuffmanNode n = new HuffmanNode('*', left.weight + right.weight, left, right);
+			q.add(n);
+		}
+		
+		root = q.peek();
+
+		System.out.println(q);
+//		System.out.println(root.left);
+//		System.out.println(root.right);
+		
+		
+	}
+	
+	//printing the tree
+	public void preOrder() {
+		preOrder(root);
+	}
+	public void preOrder(HuffmanNode n) {
+		if(n != null) {
+			System.out.println(n);
+			preOrder(n.left);
+			preOrder(n.right);
+		}
+		return;
 		
 	}
 	
@@ -43,30 +69,19 @@ public class Huffman {
 		Huffman a = new Huffman();
 		a.read("taxi.txt");
 		a.run();
+		a.preOrder();
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	//printing the tree
-	public void preOrder(HuffmanNode n) {
-		preOrder(n.left);
-		System.out.println(n.weight + " " + n.s);
-		preOrder(n.right);
-	}
-	
 	
 	//huffman node with compareTo
 	 class HuffmanNode implements Comparable<HuffmanNode>{
+		 
 		HuffmanNode left;
 		HuffmanNode right;
 		char s;
 		int weight;
+		
 		public HuffmanNode(char s, int num, HuffmanNode left, HuffmanNode right) {
+			
 			weight = num;
 			this.s = s;
 			this.left = left;
@@ -82,7 +97,7 @@ public class Huffman {
 		public int compareTo(HuffmanNode n) {
 			if(this.weight > n.weight) return 1;
 			if(this.weight < n.weight) return -1;
-			return 0;
+			return this.s - n.s;
 		}
 		
 		public String toString() {
