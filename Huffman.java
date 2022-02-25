@@ -1,12 +1,16 @@
 import java.util.*;
+import java.util.regex.Pattern;
 import java.io.*;
 
 public class Huffman {
 	Map<Character, Integer> map;
+	Map<Character, String> codemap;
 	HuffmanNode root;
 	public Huffman() {
 		root = null;
-		map =  new TreeMap<>();
+		map =  new HashMap<>();
+		codemap = new HashMap<>();
+		
 	}
 	
 	public void read(String filename) throws Exception{
@@ -28,13 +32,13 @@ public class Huffman {
 	
 	
 	public void run() throws Exception{
-		//creates a priority queue of HuffmanNodes and then does stuff
+		//creates a priority queue of HuffmanNodes
 		PriorityQueue<HuffmanNode> q = new PriorityQueue<>();
 		for(char c : map.keySet()) {
 			HuffmanNode n = new HuffmanNode(c, map.get(c));
 			q.add(n);
 		}
-		
+		//uses priorityqueue in order to build the huffman tree
 		while(q.size() != 1) {
 			HuffmanNode left = q.poll();
 			HuffmanNode right = q.poll();
@@ -42,12 +46,36 @@ public class Huffman {
 			q.add(n);
 		}
 		
-		root = q.peek();
+		root = q.poll();
 
-		System.out.println(q);
+//		System.out.println(q);
 //		System.out.println(root.left);
 //		System.out.println(root.right);
 		
+		
+	}
+	public void encode(char c) {
+		if(root == null) return;
+		else {
+			encode(root, c);
+		}
+	}
+	public void encode(HuffmanNode n, Character c) {
+		if(n == null || n.s == c) return;
+		if(map.get(c) > n.weight) {
+			if(codemap.get(c) == null) {
+				codemap.put(c, "");
+			}
+			codemap.put(c, codemap.get(c) + "1");
+			encode(n.right, c);
+		}
+		else if (map.get(c) < n.weight) {
+			if(codemap.get(c) == null) {
+				codemap.put(c, "");
+			}
+			codemap.put(c, codemap.get(c) + "0");
+			encode(n.left, c);
+		}
 		
 	}
 	
@@ -65,14 +93,22 @@ public class Huffman {
 		
 	}
 	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	public static void main(String[] args) throws Exception{
 		Huffman a = new Huffman();
 		a.read("taxi.txt");
 		a.run();
 		a.preOrder();
 	}
-	
-	//huffman node with compareTo
+	//huffman node with compareTo for the priorityqueue
 	 class HuffmanNode implements Comparable<HuffmanNode>{
 		 
 		HuffmanNode left;
