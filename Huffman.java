@@ -1,97 +1,149 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.*;
-import java.io.*;
+
 
 public class Huffman {
-	Map<Character, Integer> map;
-	PrintWriter writer;
-	HuffmanNode root;
-	String compressed;
 	
-	public Huffman() throws FileNotFoundException {
+	private TreeMap<Character, Integer> map;
+	private Node root;
+	private ArrayList<Node> list;
+	private PriorityQueue<Node> Q;
+	private PrintWriter writer;
+	private PrintWriter codeWriter;
+
+	private HashMap<Character, String> cypMap;
+	
+	public Huffman() {
+		list = new ArrayList<>();
 		root = null;
-		map =  new HashMap<>();
-		compressed = "lorem ipsum";
+		map = new TreeMap<>();
+		Q = new PriorityQueue<>();
+		try {
+			writer = new PrintWriter(new File("uff.txt"));
+			codeWriter = new PrintWriter(new File("encode.txt"));
+		}
+		catch(Exception e) {
+			
+		}
+		cypMap =  new HashMap<>();
 	}
 	
 	public void read(String filename) throws Exception{
-		Scanner file = new Scanner(new File(filename));
-		
-		//maps characters to their frequencies
-		while(file.hasNext()) {
-			String s = file.nextLine().trim();
-			for(int i = 0; i < s.length(); i++) {
-				if(!map.containsKey(s.charAt(i))) {
-					map.put(s.charAt(i), 0);
-				}
-				
-				map.put(s.charAt(i), map.get(s.charAt(i)) + 1);
+		// makes a Map of all inputs, sorts them, and adds them into a priority Q
+		Scanner scan = new Scanner(new File(filename));
+		String read ="";
+		while(scan.hasNext()) {
+			read += scan.nextLine() + "\n";
+		}
+		for (int i=0;i<read.length();i++) {
+			char cur = read.charAt(i);
+			if (map.get(cur)==null) {
+				map.put(cur, 1);
+			}
+			else {
+				map.put(cur, map.get(cur)+1);
 			}
 		}
-	
+		for (Character bob : map.keySet()) {
+			list.add(new Node( map.get(bob), bob));
+		}
+		Collections.sort(list);
+		for(Node n: list) {
+			Q.add(n);
+		}
+		// Calls addNodes to add create Hufftree
+		this.addNodes();
 		
 	}
 	
-	//builds the huffman tree
-	public void run(String filename) throws Exception{
-		//creates a priority queue of HuffmanNodes
-		PriorityQueue<HuffmanNode> q = new PriorityQueue<>();
-		writer = new PrintWriter(new File(filename));
-		for(char c : map.keySet()) {
-			HuffmanNode n = new HuffmanNode(c, map.get(c));
-			q.add(n);
+	public void preOrder() {
+		preOrder(root);
+	}
+	private void preOrder(Node n) {
+		if (n!= null) {
+			System.out.println(n);
+			preOrder(n.left);
+			preOrder(n.right);
 		}
-		//uses priorityqueue in order to build the huffman tree
-		while(q.size() != 1) {
-			HuffmanNode left = q.poll();
-			HuffmanNode right = q.poll();
-			HuffmanNode n = new HuffmanNode('*', left.weight + right.weight, left, right);
-			q.add(n);
-		}
-		
-		root = q.poll();
-		
-		//compress the tree into bits
-		compressed = "";
-		for(char c : map.keySet()) {
-			encode(c, filename);
-		}
-		
-		writer.print(compressed);
+		return;
+	}
+	
+	public void readPreOrder() {
+		readPreOrder(root);
 		writer.close();
-		
-		//decode the tree from the output file & print it out
-		Scanner temp = new Scanner(new File(filename));
-		System.out.print(decode(temp.next().trim()));
-		temp.close();
+	}
+	private void readPreOrder(Node n) {
+		if (n!= null) {
+			writer.println(n);
+			readPreOrder(n.left);
+			readPreOrder(n.right);
+		}
+		return;
+	}
+ 	
+	public void addNodes() {
+		//uses the priority queue to make a Huffman Tree
+		while(!Q.isEmpty()) {
+			Node cur = Q.poll();
+			if (Q.isEmpty()) {
+				root = cur;
+				return;
+			}
+			addNodes(cur, Q.poll());
+		}
+		addCyp(root.left);
+		addCyp(root.right);
 	}
 	
-	//given a character, traverse the tree and add on 1s and 0s
-	public void encode(char c, String filename) throws Exception {
-		if(root == null) return;
-		else {
-			StringBuffer st = new StringBuffer("");
-			encode(root, c, st, filename);
+	private void addCyp(Node n) {
+		if (n!=null) {
+			cypMap.put(n.data, n.code);
+			addCyp(n.left);
+			addCyp(n.right);
 		}
 	}
 	
-	public void encode(HuffmanNode n, Character c, StringBuffer code, String filename) throws Exception{
-		if(n == null) return;
-		else if(n.s == c) {
-			compressed += code.toString();
-			
-		}
-		else {
-			code.append('0');
-	        encode(n.left, c, code, filename);
-	        code.deleteCharAt(code.length()-1);
-	        
-	        code.append('1');
-	        encode(n.right, c, code, filename);
-	        code.deleteCharAt(code.length() - 1);
-	         
-		}
-		 
+	private void addNodes(Node add, Node add2) {
 		
+		Node small = add.chooseSmall(add2);
+		addCode(small, "0");
+		Node big = add.chooseBig(add2);
+		addCode(big, "1");
+		
+		Node par = new Node( small, big, '*', add.sum+add2.sum);
+		Q.add(par);
+	}
+	
+	private void addCode(Node n, String cyp) {
+		if (n != null) {
+			n.code=cyp + n.code;
+			addCode(n.right, cyp);
+			addCode(n.left, cyp);
+		}
+	}
+	
+	
+	public String encode(String cyp) {
+		if (cyp.length()>0) {
+			if (cypMap.get(cyp.charAt(0))!=null ) {
+				return cypMap.get(cyp.charAt(0)) + encode(cyp.substring(1));
+			}
+		}
+		return "";
+	}
+	
+	public void encode(File filename) throws FileNotFoundException {
+		Scanner scan = new Scanner(filename);
+		String read ="";
+		String code = "";
+		while(scan.hasNext()) {
+			read = scan.nextLine();
+			code = encode(read);
+			codeWriter.println(code);
+		}
+		codeWriter.close();		
 	}
 	
 	public String decode(String cyp) {
@@ -99,12 +151,15 @@ public class Huffman {
 		return decode(cyp, root);
 	}
 	
-	private String decode(String cyp, HuffmanNode n) {
+	private String decode(String cyp, Node n) {
 		if (n == null) {
 			return "";
 		}
-		if (n.s!='*' || cyp.length()==0) {
-			return n.s + (cyp.length()==0 ? "":decode(cyp, root));
+		if (n.data!='*' || cyp.length()==0) {
+			if (n.equals(root)) {
+				return "";
+			}
+			return n.data + (cyp.length()==0 ? "":decode(cyp, root));
 		}
 		if (cyp.charAt(0) == '1') {
 			return decode(cyp.substring(1), n.right);
@@ -117,63 +172,56 @@ public class Huffman {
 	}
 	
 	
-	//given a filename, go to that file and decode the characters
 	
 	
-	//printing the tree
-	public void preOrder() {
-		preOrder(root);
-	}
-	public void preOrder(HuffmanNode n) {
-		if(n != null) {
-			System.out.println(n);
-			preOrder(n.left);
-			preOrder(n.right);
-		}
-		return;
+	
+	
+	public class Node implements Comparable<Node>{
+	
+		Node left;
+		Node right;
+		char data;
+		Integer sum;
+		String code;
 		
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-	//huffman node with compareTo for the priorityqueue
-	 class HuffmanNode implements Comparable<HuffmanNode>{
-		 
-		HuffmanNode left;
-		HuffmanNode right;
-		char s;
-		int weight;
-		
-		public HuffmanNode(char s, int num, HuffmanNode left, HuffmanNode right) {
-			
-			weight = num;
-			this.s = s;
-			this.left = left;
-			this.right = right;
+		public Node(Node l, Node r, char d, int s) {
+			left = l;
+			right = r;
+			data = d;
+			sum =s;
+			code = "";
 		}
-		public HuffmanNode(char s, int num) {
+		public Node (Integer s, char d) {
 			left = null;
 			right = null;
-			this.s = s;
-			weight = num;
+			sum = s;
+			data =d;
+			code = "";
+			
+		}
+		@Override
+		public int compareTo(Huffman.Node o) {
+			// TODO Auto-generated method stub
+			return this.sum-o.sum;
 		}
 		
-		public int compareTo(HuffmanNode n) {
-			if(this.weight > n.weight) return 1;
-			if(this.weight < n.weight) return -1;
-			return this.s - n.s;
+		public Node chooseSmall(Node o) {
+			if (o.sum>this.sum) {
+				return this;
+			}
+			return o;
+		}
+		
+		public Node chooseBig(Node o) {
+			if (o.sum>this.sum) {
+				return o;
+			}
+			return this;
 		}
 		
 		public String toString() {
-			return s + " " + weight;
+			return data + ": " + sum+" " + code;
 		}
-		
-		
-		
 	}
+
 }
