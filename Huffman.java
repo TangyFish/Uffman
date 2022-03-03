@@ -10,11 +10,12 @@ public class Huffman {
 	private Node root;
 	private ArrayList<Node> list;
 	private PriorityQueue<Node> Q;
-	private PrintWriter writer;
-	private PrintWriter codeWriter;
-
-	private HashMap<Character, String> cypMap;
+	private PrintWriter writer; // writer writes to the uff.txt file.
+	private PrintWriter codeWriter; // writes to the encode.txt file, which stores a file in terms of huffmancode
+	private HashMap<Character, String> cypMap; // map of all Huffman Nodes to their huffmancode ID
 	
+	
+	// constructor
 	public Huffman() {
 		list = new ArrayList<>();
 		root = null;
@@ -30,6 +31,7 @@ public class Huffman {
 		cypMap =  new HashMap<>();
 	}
 	
+	// reads a file and builds the huffmantree + map
 	public void read(String filename) throws Exception{
 		// makes a Map of all inputs, sorts them, and adds them into a priority Q
 		Scanner scan = new Scanner(new File(filename));
@@ -54,10 +56,14 @@ public class Huffman {
 			Q.add(n);
 		}
 		// Calls addNodes to add create Hufftree
-		this.addNodes();
-		
+		addNodes();
+		// Calls addCyp to add all HuffmanCode to the cypMap
+		addCyp(root.left);
+		addCyp(root.right);
 	}
 	
+	
+	// prints out tree in preorder
 	public void preOrder() {
 		preOrder(root);
 	}
@@ -70,6 +76,7 @@ public class Huffman {
 		return;
 	}
 	
+	// writes the tree in preorder into the uff.txt file
 	public void readPreOrder() {
 		readPreOrder(root);
 		writer.close();
@@ -83,7 +90,9 @@ public class Huffman {
 		return;
 	}
  	
-	public void addNodes() {
+	
+	// helper method in making Huffman tree. Adds nodes to the tree
+	private void addNodes() {
 		//uses the priority queue to make a Huffman Tree
 		while(!Q.isEmpty()) {
 			Node cur = Q.poll();
@@ -92,16 +101,6 @@ public class Huffman {
 				return;
 			}
 			addNodes(cur, Q.poll());
-		}
-		addCyp(root.left);
-		addCyp(root.right);
-	}
-	
-	private void addCyp(Node n) {
-		if (n!=null) {
-			cypMap.put(n.data, n.code);
-			addCyp(n.left);
-			addCyp(n.right);
 		}
 	}
 	
@@ -115,7 +114,8 @@ public class Huffman {
 		Node par = new Node( small, big, '*', add.sum+add2.sum);
 		Q.add(par);
 	}
-	
+	// helper method to adddNodes
+
 	private void addCode(Node n, String cyp) {
 		if (n != null) {
 			n.code=cyp + n.code;
@@ -124,7 +124,16 @@ public class Huffman {
 		}
 	}
 	
+	// helper adds all huffmancode IDs of all Nodes into a map
+		private void addCyp(Node n) {
+			if (n!=null) {
+				cypMap.put(n.data, n.code);
+				addCyp(n.left);
+				addCyp(n.right);
+			}
+		}
 	
+		// encodes a string into huffmancode
 	public String encode(String cyp) {
 		if (cyp.length()>0) {
 			if (cypMap.get(cyp.charAt(0))!=null ) {
@@ -134,6 +143,7 @@ public class Huffman {
 		return "";
 	}
 	
+	// encodes an entire file into huffmancode and writes it into the encode.txt file
 	public void encode(File filename) throws FileNotFoundException {
 		Scanner scan = new Scanner(filename);
 		String read ="";
@@ -146,8 +156,8 @@ public class Huffman {
 		codeWriter.close();		
 	}
 	
+	// decodes a string of huffmanCode into a regular string
 	public String decode(String cyp) {
-		
 		return decode(cyp, root);
 	}
 	
@@ -171,11 +181,7 @@ public class Huffman {
 		
 	}
 	
-	
-	
-	
-	
-	
+	// huff node. Implements comparable to compare Nodes and sort
 	public class Node implements Comparable<Node>{
 	
 		Node left;
