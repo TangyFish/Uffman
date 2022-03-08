@@ -39,9 +39,9 @@ public class Enigma {
 		f = new Scanner(new File(inname));
 		String print = "";
 		String[] keyLine = f.nextLine().trim().split(" ");
-		int one = Integer.parseInt(keyLine[1]);
-		int two = Integer.parseInt(keyLine[2]);
-		int three = Integer.parseInt(keyLine[3]);
+		int one = Integer.parseInt(keyLine[2]);
+		int two = Integer.parseInt(keyLine[3]);
+		int three = Integer.parseInt(keyLine[4]);
 		rotor1.setind(one);
 		rotor2.setind(two);
 		rotor3.setind(three);
@@ -62,13 +62,6 @@ public class Enigma {
 	}
 	
 	
-	
-//	public Character shift(int s, char c) {
-//		return (char) ((c + s) % 26 + 65);
-//	}
-//	public Character deshift(int s, char c) {
-//		return (char) ((c - s) % 26 + 65);
-//	}
 	public char shift(int num, char in) {
 		return (char)((in + num)%65%26+65);
 	}
@@ -103,7 +96,7 @@ public class Enigma {
 		}
 		private void setind(int n) {
 			for(int i = 0; i < shift.length; i++) {
-				if(shift[i] == n) index = n;
+				if(shift[i] == n) index = i;
 				break;
 			}
 		}
